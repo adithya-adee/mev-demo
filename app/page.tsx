@@ -180,27 +180,27 @@ export default function MEVDemo() {
               marginBottom: "1rem",
             }}
           >
-            MEV Demo : Need Feeback for Educational Purpose
+            MEV Demo
           </div>
           <h1
             style={{
-              fontSize: "2rem",
+              fontSize: "2.5rem",
               fontWeight: "700",
-              color: "#111",
-              margin: "0 0 1rem 0",
+              color: "#d32f2f",
+              margin: "0 0 0.5rem 0",
             }}
           >
-            See Why Your Swaps Go Worse Than Expected
+            Why You Lose Money
           </h1>
           <p
             style={{
               color: "#666",
-              fontSize: "1.125rem",
+              fontSize: "1rem",
               maxWidth: "600px",
               margin: "0 auto",
             }}
           >
-            Compare normal vs protected execution
+            Compare: Public vs Private
           </p>
         </div>
 
@@ -348,7 +348,7 @@ export default function MEVDemo() {
                     color: "#333",
                   }}
                 >
-                  Normal (Public Swap)
+                  Public Swap
                 </h3>
 
                 <div style={{ marginBottom: "1rem" }}>
@@ -359,7 +359,7 @@ export default function MEVDemo() {
                       marginBottom: "0.25rem",
                     }}
                   >
-                    Expected Output
+                    You Get
                   </div>
                   <div
                     style={{
@@ -385,7 +385,7 @@ export default function MEVDemo() {
                     }}
                   >
                     <div style={{ color: "#666", marginBottom: "0.25rem" }}>
-                      Possible outcome range:
+                      Range:
                     </div>
                     <div style={{ fontWeight: "600", color: "#e65100" }}>
                       {results.normal.rangeMin} – {results.normal.rangeMax} USDC
@@ -406,7 +406,7 @@ export default function MEVDemo() {
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Visible to public mempool
+                      Bots See This
                     </span>
                     <span style={{ fontWeight: "600" }}>Yes</span>
                   </div>
@@ -414,7 +414,7 @@ export default function MEVDemo() {
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Slippage buffer required
+                      Slippage
                     </span>
                     <span style={{ fontWeight: "600" }}>
                       {results.normal.slippage}
@@ -424,7 +424,7 @@ export default function MEVDemo() {
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Failure risk
+                      Risk
                     </span>
                     <span
                       style={{
@@ -444,7 +444,7 @@ export default function MEVDemo() {
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Execution confidence
+                      Confidence
                     </span>
                     <span style={{ fontWeight: "600", color: "#ff9800" }}>
                       Low
@@ -465,13 +465,13 @@ export default function MEVDemo() {
                   }}
                 >
                   <div style={{ fontWeight: "600", marginBottom: "0.5rem" }}>
-                    Common issues:
+                    You Lose From:
                   </div>
                   <div style={{ fontSize: "0.75rem", lineHeight: "1.4" }}>
                     • Sandwiching
                     <br />
-                    • Price moved before execution
-                    <br />• Slippage exceeded
+                    • Front-Running
+                    <br />• High Slippage
                   </div>
                 </div>
               </div>
@@ -487,24 +487,14 @@ export default function MEVDemo() {
               >
                 <h3
                   style={{
-                    margin: "0 0 0.25rem 0",
+                    margin: "0 0 1rem 0",
                     fontSize: "1.25rem",
                     fontWeight: "600",
                     color: "#333",
                   }}
                 >
-                  Protected (Private Execution)
+                  Private Execution
                 </h3>
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "#666",
-                    marginBottom: "1rem",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Simulated based on historical MEV ranges
-                </div>
 
                 <div style={{ marginBottom: "1rem" }}>
                   <div
@@ -514,7 +504,7 @@ export default function MEVDemo() {
                       marginBottom: "0.25rem",
                     }}
                   >
-                    Expected Output
+                    You Get
                   </div>
                   <div
                     style={{
@@ -550,7 +540,7 @@ export default function MEVDemo() {
                     }}
                   >
                     <div style={{ color: "#666", marginBottom: "0.25rem" }}>
-                      Possible outcome range:
+                      Range:
                     </div>
                     <div style={{ fontWeight: "600", color: "#2e7d32" }}>
                       {results.protected.rangeMin} –{" "}
@@ -572,15 +562,15 @@ export default function MEVDemo() {
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Trade hidden until inclusion
+                      Bots Can&apos;t See
                     </span>
-                    <span style={{ fontWeight: "600" }}>Yes</span>
+                    <span style={{ fontWeight: "600" }}>✓</span>
                   </div>
                   <div
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Lower slippage buffer
+                      Slippage
                     </span>
                     <span style={{ fontWeight: "600" }}>
                       {results.protected.slippage}
@@ -600,7 +590,7 @@ export default function MEVDemo() {
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      MEV avoided (est.)
+                      MEV Saved
                     </span>
                     <span style={{ fontWeight: "600" }}>
                       {results.protected.mevAvoided}%
@@ -631,11 +621,11 @@ export default function MEVDemo() {
                   }}
                 >
                   <div style={{ fontWeight: "600", marginBottom: "0.5rem" }}>
-                    Reduced risk of:
+                    Protected From:
                   </div>
                   <div style={{ fontSize: "0.75rem", lineHeight: "1.4" }}>
                     • Sandwiching
-                    <br />• Pre-trade visibility
+                    <br />• Front-Running
                   </div>
                 </div>
               </div>
@@ -659,7 +649,7 @@ export default function MEVDemo() {
                   color: "#333",
                 }}
               >
-                When this matters most
+                Matters Most When
               </h3>
               <div
                 style={{
@@ -679,7 +669,7 @@ export default function MEVDemo() {
                   <span style={{ color: "#4caf50", fontSize: "1.25rem" }}>
                     ✓
                   </span>
-                  <span>Trade size is large</span>
+                  <span>Large Trades</span>
                 </div>
                 <div
                   style={{
@@ -692,7 +682,7 @@ export default function MEVDemo() {
                   <span style={{ color: "#4caf50", fontSize: "1.25rem" }}>
                     ✓
                   </span>
-                  <span>Volatility is high</span>
+                  <span>High Volatility</span>
                 </div>
                 <div
                   style={{
@@ -705,7 +695,7 @@ export default function MEVDemo() {
                   <span style={{ color: "#4caf50", fontSize: "1.25rem" }}>
                     ✓
                   </span>
-                  <span>Liquidity is thin</span>
+                  <span>Thin Liquidity</span>
                 </div>
               </div>
             </div>
@@ -732,7 +722,7 @@ export default function MEVDemo() {
                   marginBottom: "0.5rem",
                 }}
               >
-                Why this happens
+                The Problem
               </summary>
               <div
                 style={{
@@ -747,57 +737,6 @@ export default function MEVDemo() {
                 execution hides intent until inclusion.
               </div>
             </details>
-
-            {/* Disclaimer */}
-            <div
-              style={{
-                backgroundColor: results.isMock ? "#fff3e0" : "#e3f2fd",
-                border: results.isMock
-                  ? "1px solid #ff9800"
-                  : "1px solid #2196f3",
-                borderRadius: "8px",
-                padding: "1rem",
-                marginBottom: "1rem",
-                fontSize: "0.875rem",
-                color: results.isMock ? "#e65100" : "#0d47a1",
-              }}
-            >
-              {results.isMock ? (
-                <>
-                  <strong>Demo Mode:</strong> Using mock pricing data
-                  (~$195/SOL). Protected route output is simulated based on
-                  historical MEV loss ranges for retail trades (0.1–0.4%) and
-                  includes a 0.1% platform fee.
-                </>
-              ) : (
-                <>
-                  <strong>Note:</strong> Normal route uses real Jupiter quotes.
-                  Protected route output is simulated based on historical MEV
-                  loss ranges for retail trades (0.1–0.4%) and includes a 0.1%
-                  platform fee. This demonstrates how private orderflow
-                  execution reduces exposure compared to public mempool
-                  visibility.
-                </>
-              )}
-            </div>
-
-            {/* What This Demo Is NOT */}
-            <div
-              style={{
-                backgroundColor: "#f9f9f9",
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                padding: "1rem",
-                marginBottom: "2rem",
-                fontSize: "0.95rem",
-                color: "#666",
-                textAlign: "center",
-              }}
-            >
-              This demo does not execute trades or guarantee outcomes. Protected
-              execution shown here is a simulation to explain potential
-              benefits.
-            </div>
 
             {/* Feedback */}
             {!feedbackSent ? (
@@ -818,7 +757,7 @@ export default function MEVDemo() {
                     color: "#333",
                   }}
                 >
-                  Was this useful?
+                  Was this useful? Your Feedback Matters!!
                 </h3>
                 <div
                   style={{
@@ -999,19 +938,67 @@ export default function MEVDemo() {
                 Thanks for your feedback! 🙏
               </div>
             )}
+
+            {/* Disclaimer */}
+            <div
+              style={{
+                backgroundColor: results.isMock ? "#fff3e0" : "#e3f2fd",
+                border: results.isMock
+                  ? "1px solid #ff9800"
+                  : "1px solid #2196f3",
+                borderRadius: "8px",
+                padding: "1rem",
+                marginBottom: "1rem",
+                fontSize: "0.875rem",
+                color: results.isMock ? "#e65100" : "#0d47a1",
+              }}
+            >
+              {results.isMock ? (
+                <>
+                  <strong>Demo Mode:</strong> Using mock pricing data
+                  (~$195/SOL). Protected route output is simulated based on
+                  historical MEV loss ranges for retail trades (0.1–0.4%) and
+                  includes a 0.1% platform fee.
+                </>
+              ) : (
+                <>
+                  <strong>Note:</strong> Normal route uses real Jupiter quotes.
+                  Protected route output is simulated based on historical MEV
+                  loss ranges for retail trades (0.1–0.4%) and includes a 0.1%
+                  platform fee. This demonstrates how private orderflow
+                  execution reduces exposure compared to public mempool
+                  visibility.
+                </>
+              )}
+            </div>
+
+            {/* What This Demo Is NOT */}
+            <div
+              style={{
+                backgroundColor: "#f9f9f9",
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                padding: "0.75rem",
+                marginBottom: "2rem",
+                fontSize: "0.8rem",
+                color: "#666",
+                textAlign: "center",
+              }}
+            >
+              Educational simulation only. Not actual trades.
+            </div>
           </>
         )}
-
         {/* Footer */}
         <div
           style={{
             textAlign: "center",
             marginTop: "3rem",
             color: "#999",
-            fontSize: "0.975rem",
+            fontSize: "0.875rem",
           }}
         >
-          <p>No wallet required • No signup • Just education</p>
+          <p>No wallet • No signup</p>
         </div>
       </div>
 
