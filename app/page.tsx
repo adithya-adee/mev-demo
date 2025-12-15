@@ -1,7 +1,24 @@
 "use client";
 
 import React, { useState } from "react";
-import { WhySwapsGoWrong } from "@/components/WhySwapsGoWrong";
+import { TrendingDown, TrendingUp, AlertTriangle, Shield, ChevronDown, ExternalLink } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export default function MEVDemo() {
   const [amount, setAmount] = useState("5");
@@ -9,19 +26,13 @@ export default function MEVDemo() {
   const [results, setResults] = useState<{
     normal: {
       output: string;
+      loss: string;
       risk: string;
-      slippage: string;
-      rangeMin: string;
-      rangeMax: string;
     };
     protected: {
       output: string;
-      improvement: string;
-      mevAvoided: string;
+      saved: string;
       risk: string;
-      slippage: string;
-      rangeMin: string;
-      rangeMax: string;
     };
     rawData: {
       normalOutput: number;
@@ -36,18 +47,27 @@ export default function MEVDemo() {
   const [feedbackText, setFeedbackText] = useState("");
   const [selectedSentiment, setSelectedSentiment] = useState("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [educationOpen, setEducationOpen] = useState(false);
 
-  // Deterministic MEV calculation based on trade size
   const calculateMEVExposure = (solAmount: number): number => {
-    if (solAmount < 1) return 0.001; // 0.10%
-    if (solAmount <= 5) return 0.0025; // 0.25%
-    return 0.004; // 0.40%
+    if (solAmount < 1) return 0.001;
+    if (solAmount <= 5) return 0.0025;
+    return 0.004;
   };
 
   const getRiskLevel = (solAmount: number): string => {
     if (solAmount < 1) return "Low";
     if (solAmount <= 5) return "Medium";
     return "High";
+  };
+
+  // Calculate estimated loss for preview
+  const getEstimatedLoss = (solAmount: number): string => {
+    const mockPrice = 195;
+    const estimatedOutput = solAmount * mockPrice;
+    const mevExposure = calculateMEVExposure(solAmount);
+    const loss = estimatedOutput * mevExposure;
+    return loss.toFixed(2);
   };
 
   const compareSwaps = async () => {
@@ -57,11 +77,7 @@ export default function MEVDemo() {
 
     try {
       const solAmount = parseFloat(amount);
-
-      // Fetch Jupiter quote via our API proxy (avoids CORS)
-      const response = await fetch(
-        `/api/quote?amount=${Math.floor(solAmount * 1e9)}`
-      );
+      const response = await fetch(`/api/quote?amount=${Math.floor(solAmount * 1e9)}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch quote");
@@ -71,45 +87,22 @@ export default function MEVDemo() {
       const normalOutput = parseFloat(data.outAmount) / 1e6;
       const isMock = data._mock || false;
 
-      // Deterministic protected calculation
       const mevExposure = calculateMEVExposure(solAmount);
-      const platformFee = 0.001; // 0.10%
+      const platformFee = 0.001;
       const mevSavings = normalOutput * mevExposure;
       const fee = normalOutput * platformFee;
       const protectedOutput = normalOutput + mevSavings - fee;
 
-      // Calculate outcome ranges based on slippage
-      const normalSlippage = 0.005; // 0.5%
-      const protectedSlippage = 0.003; // 0.3%
-
-      const normalRangeMin = (normalOutput * (1 - normalSlippage)).toFixed(2);
-      const normalRangeMax = normalOutput.toFixed(2);
-
-      const protectedRangeMin = (
-        protectedOutput *
-        (1 - protectedSlippage)
-      ).toFixed(2);
-      const protectedRangeMax = protectedOutput.toFixed(2);
-
       setResults({
         normal: {
           output: normalOutput.toFixed(2),
+          loss: mevSavings.toFixed(2),
           risk: getRiskLevel(solAmount),
-          slippage: "0.5%",
-          rangeMin: normalRangeMin,
-          rangeMax: normalRangeMax,
         },
         protected: {
           output: protectedOutput.toFixed(2),
-          improvement: (
-            ((protectedOutput - normalOutput) / normalOutput) *
-            100
-          ).toFixed(2),
-          mevAvoided: (mevExposure * 100).toFixed(2),
-          risk: "Lower",
-          slippage: "0.3%",
-          rangeMin: protectedRangeMin,
-          rangeMax: protectedRangeMax,
+          saved: (mevSavings - fee).toFixed(2),
+          risk: "Low",
         },
         rawData: {
           normalOutput,
@@ -157,980 +150,414 @@ export default function MEVDemo() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#f5f5f5",
-        padding: "2rem 1rem",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-      }}
-    >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-          <div
-            style={{
-              display: "inline-block",
-              backgroundColor: "#333",
-              color: "white",
-              padding: "0.5rem 1rem",
-              borderRadius: "4px",
-              fontSize: "0.875rem",
-              fontWeight: "500",
-              marginBottom: "1rem",
-            }}
-          >
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Hero Section */}
+        <div className="text-center mb-8">
+          <div className="inline-block bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium mb-4">
             MEV Demo
           </div>
-          <h1
-            style={{
-              fontSize: "2.5rem",
-              fontWeight: "700",
-              color: "#d32f2f",
-              margin: "0 0 0.5rem 0",
-            }}
-          >
-            Why You Lose Money
+          <h1 className="text-4xl md:text-5xl font-bold text-red-600 mb-3">
+            Your Swaps Are Leaking Money
           </h1>
-          <p
-            style={{
-              color: "#666",
-              fontSize: "1rem",
-              maxWidth: "600px",
-              margin: "0 auto",
-            }}
-          >
-            Compare: Public vs Private
+          <p className="text-xl text-gray-600 mb-2">
+            Bots front-run your trades. See how much you&apos;re losing.
           </p>
         </div>
 
-        {/* Input Section */}
-        <div
-          style={{
-            backgroundColor: "white",
-            border: "1px solid #ddd",
-            borderRadius: "8px",
-            padding: "1.5rem",
-            marginBottom: "2rem",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minMax(150px, 1fr))",
-              gap: "1rem",
-              alignItems: "end",
-            }}
-          >
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  marginBottom: "0.5rem",
-                  color: "#333",
-                }}
-              >
-                Amount (SOL)
-              </label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="5"
-                min="0.1"
-                step="0.1"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontSize: "1rem",
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  marginBottom: "0.5rem",
-                  color: "#333",
-                }}
-              >
-                From
-              </label>
-              <div
-                style={{
-                  padding: "0.75rem",
-                  backgroundColor: "#f9f9f9",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontWeight: "600",
-                }}
-              >
-                SOL
+        {/* Input Card */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div>
+                <Label htmlFor="amount" className="text-sm font-medium mb-2">
+                  Amount (SOL)
+                </Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="5"
+                  min="0.1"
+                  step="0.1"
+                  className="text-lg"
+                />
               </div>
-            </div>
 
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  marginBottom: "0.5rem",
-                  color: "#333",
-                }}
-              >
-                To
-              </label>
-              <div
-                style={{
-                  padding: "0.75rem",
-                  backgroundColor: "#f9f9f9",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontWeight: "600",
-                }}
-              >
-                USDC
+              <div>
+                <Label className="text-sm font-medium mb-2">From</Label>
+                <div className="h-10 px-4 py-2 bg-gray-100 border border-gray-200 rounded-md font-semibold flex items-center">
+                  SOL
+                </div>
               </div>
+
+              <div>
+                <Label className="text-sm font-medium mb-2">To</Label>
+                <div className="h-10 px-4 py-2 bg-gray-100 border border-gray-200 rounded-md font-semibold flex items-center">
+                  USDC
+                </div>
+              </div>
+
+              <Button
+                onClick={compareSwaps}
+                disabled={loading || !amount || parseFloat(amount) <= 0}
+                className="h-10 bg-gray-900 hover:bg-gray-800"
+              >
+                {loading ? "Loading..." : "Show Me"}
+              </Button>
             </div>
+            
+            {/* Estimated Loss Preview */}
+            {!results && amount && parseFloat(amount) > 0 && (
+              <Alert className="mt-4 bg-orange-50 border-orange-200">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-800">
+                  Typical loss for {amount} SOL: <strong>~${getEstimatedLoss(parseFloat(amount))}</strong> to MEV bots
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
 
-            <button
-              onClick={compareSwaps}
-              disabled={loading || !amount || parseFloat(amount) <= 0}
-              style={{
-                padding: "0.75rem 2rem",
-                backgroundColor: loading ? "#ccc" : "#111",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontSize: "1rem",
-                fontWeight: "600",
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
-            >
-              {loading ? "Loading..." : "Compare"}
-            </button>
-          </div>
-        </div>
-
-        {/* Results */}
+        {/* Results - The Loss */}
         {results && (
           <>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-                gap: "1.5rem",
-                marginBottom: "2rem",
-              }}
-            >
-              {/* Normal Swap */}
-              <div
-                style={{
-                  backgroundColor: "white",
-                  border: "2px solid #ff9800",
-                  borderRadius: "8px",
-                  padding: "1.5rem",
-                }}
-              >
-                <h3
-                  style={{
-                    margin: "0 0 1rem 0",
-                    fontSize: "1.25rem",
-                    fontWeight: "600",
-                    color: "#333",
-                  }}
-                >
-                  Public Swap
-                </h3>
-
-                <div style={{ marginBottom: "1rem" }}>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#666",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    You Get
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "2rem",
-                      fontWeight: "700",
-                      color: "#111",
-                    }}
-                  >
-                    {results.normal.output}{" "}
-                    <span style={{ fontSize: "1rem", color: "#666" }}>
-                      USDC
-                    </span>
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              {/* Normal Swap - Red Alert Style */}
+              <Card className="border-2 border-red-500 bg-red-50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingDown className="h-5 w-5 text-red-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Normal Swap
+                    </h3>
                   </div>
 
-                  {/* Outcome Range */}
-                  <div
-                    style={{
-                      marginTop: "0.5rem",
-                      padding: "0.5rem",
-                      backgroundColor: "#fff3e0",
-                      borderRadius: "4px",
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    <div style={{ color: "#666", marginBottom: "0.25rem" }}>
-                      Range:
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-sm text-gray-600 mb-1">You Get</div>
+                      <div className="text-3xl font-bold text-gray-900">
+                        ${results.normal.output}
+                        <span className="text-base text-gray-500 ml-2">USDC</span>
+                      </div>
                     </div>
-                    <div style={{ fontWeight: "600", color: "#e65100" }}>
-                      {results.normal.rangeMin} – {results.normal.rangeMax} USDC
+
+                    <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className="h-5 w-5 text-red-700" />
+                        <div className="text-sm font-medium text-red-900">
+                          You LOSE
+                        </div>
+                      </div>
+                      <div className="text-2xl font-bold text-red-700">
+                        ${results.normal.loss}
+                      </div>
+                      <div className="text-xs text-red-800 mt-1">
+                        stolen by MEV bots
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-red-200">
+                      <span className="text-sm text-gray-700">MEV Risk</span>
+                      <span className={`font-semibold ${
+                        results.normal.risk === "High" ? "text-red-600" :
+                        results.normal.risk === "Medium" ? "text-orange-600" :
+                        "text-gray-600"
+                      }`}>
+                        {results.normal.risk}
+                      </span>
                     </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <div
-                  style={{
-                    borderTop: "1px solid #eee",
-                    paddingTop: "1rem",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.75rem",
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Bots See This
-                    </span>
-                    <span style={{ fontWeight: "600" }}>Yes</span>
-                  </div>
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Slippage
-                    </span>
-                    <span style={{ fontWeight: "600" }}>
-                      {results.normal.slippage}
-                    </span>
-                  </div>
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Risk
-                    </span>
-                    <span
-                      style={{
-                        fontWeight: "600",
-                        color:
-                          results.normal.risk === "High"
-                            ? "#d32f2f"
-                            : results.normal.risk === "Medium"
-                            ? "#ff9800"
-                            : "#666",
-                      }}
-                    >
-                      {results.normal.risk}
-                    </span>
-                  </div>
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Confidence
-                    </span>
-                    <span style={{ fontWeight: "600", color: "#ff9800" }}>
-                      Low
-                    </span>
-                  </div>
-                </div>
-
-                {/* What Usually Goes Wrong */}
-                <div
-                  style={{
-                    marginTop: "1rem",
-                    padding: "0.75rem",
-                    backgroundColor: "#fff3e0",
-                    border: "1px solid #ff9800",
-                    borderRadius: "4px",
-                    fontSize: "0.875rem",
-                    color: "#e65100",
-                  }}
-                >
-                  <div style={{ fontWeight: "600", marginBottom: "0.5rem" }}>
-                    You Lose From:
-                  </div>
-                  <div style={{ fontSize: "0.75rem", lineHeight: "1.4" }}>
-                    • Sandwiching
-                    <br />
-                    • Front-Running
-                    <br />• High Slippage
-                  </div>
-                </div>
-              </div>
-
-              {/* Protected Swap */}
-              <div
-                style={{
-                  backgroundColor: "white",
-                  border: "2px solid #4caf50",
-                  borderRadius: "8px",
-                  padding: "1.5rem",
-                }}
-              >
-                <h3
-                  style={{
-                    margin: "0 0 1rem 0",
-                    fontSize: "1.25rem",
-                    fontWeight: "600",
-                    color: "#333",
-                  }}
-                >
-                  Private Execution
-                </h3>
-
-                <div style={{ marginBottom: "1rem" }}>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#666",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    You Get
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "2rem",
-                      fontWeight: "700",
-                      color: "#111",
-                    }}
-                  >
-                    {results.protected.output}{" "}
-                    <span style={{ fontSize: "1rem", color: "#666" }}>
-                      USDC
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      marginTop: "0.5rem",
-                      color: "#4caf50",
-                      fontWeight: "600",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    ↑ +{results.protected.improvement}% better
+              {/* Protected Swap - Green Success Style */}
+              <Card className="border-2 border-green-500 bg-green-50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Shield className="h-5 w-5 text-green-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Protected Swap
+                    </h3>
                   </div>
 
-                  {/* Outcome Range */}
-                  <div
-                    style={{
-                      marginTop: "0.5rem",
-                      padding: "0.5rem",
-                      backgroundColor: "#e8f5e9",
-                      borderRadius: "4px",
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    <div style={{ color: "#666", marginBottom: "0.25rem" }}>
-                      Range:
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-sm text-gray-600 mb-1">You Get</div>
+                      <div className="text-3xl font-bold text-gray-900">
+                        ${results.protected.output}
+                        <span className="text-base text-gray-500 ml-2">USDC</span>
+                      </div>
                     </div>
-                    <div style={{ fontWeight: "600", color: "#2e7d32" }}>
-                      {results.protected.rangeMin} –{" "}
-                      {results.protected.rangeMax} USDC
+
+                    <div className="p-4 bg-green-100 border border-green-300 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="h-5 w-5 text-green-700" />
+                        <div className="text-sm font-medium text-green-900">
+                          You SAVE
+                        </div>
+                      </div>
+                      <div className="text-2xl font-bold text-green-700">
+                        ${results.protected.saved}
+                      </div>
+                      <div className="text-xs text-green-800 mt-1">
+                        protected from MEV
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-green-200">
+                      <span className="text-sm text-gray-700">MEV Risk</span>
+                      <span className="font-semibold text-green-600">
+                        {results.protected.risk}
+                      </span>
                     </div>
                   </div>
-                </div>
-
-                <div
-                  style={{
-                    borderTop: "1px solid #eee",
-                    paddingTop: "1rem",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.75rem",
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Bots Can&apos;t See
-                    </span>
-                    <span style={{ fontWeight: "600" }}>✓</span>
-                  </div>
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Slippage
-                    </span>
-                    <span style={{ fontWeight: "600" }}>
-                      {results.protected.slippage}
-                    </span>
-                  </div>
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Failure risk
-                    </span>
-                    <span style={{ fontWeight: "600", color: "#4caf50" }}>
-                      {results.protected.risk}
-                    </span>
-                  </div>
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      MEV Saved
-                    </span>
-                    <span style={{ fontWeight: "600" }}>
-                      {results.protected.mevAvoided}%
-                    </span>
-                  </div>
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                      Execution confidence
-                    </span>
-                    <span style={{ fontWeight: "600", color: "#4caf50" }}>
-                      Higher
-                    </span>
-                  </div>
-                </div>
-
-                {/* Reduced Risks */}
-                <div
-                  style={{
-                    marginTop: "1rem",
-                    padding: "0.75rem",
-                    backgroundColor: "#e8f5e9",
-                    border: "1px solid #4caf50",
-                    borderRadius: "4px",
-                    fontSize: "0.875rem",
-                    color: "#2e7d32",
-                  }}
-                >
-                  <div style={{ fontWeight: "600", marginBottom: "0.5rem" }}>
-                    Protected From:
-                  </div>
-                  <div style={{ fontSize: "0.75rem", lineHeight: "1.4" }}>
-                    • Sandwiching
-                    <br />• Front-Running
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
-
-            {/* When This Matters Most */}
-            <div
-              style={{
-                backgroundColor: "white",
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                padding: "1.5rem",
-                marginBottom: "2rem",
-              }}
-            >
-              <h3
-                style={{
-                  margin: "0 0 1rem 0",
-                  fontSize: "1.125rem",
-                  fontWeight: "600",
-                  color: "#333",
-                }}
-              >
-                Matters Most When
-              </h3>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                  gap: "1rem",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  <span style={{ color: "#4caf50", fontSize: "1.25rem" }}>
-                    ✓
-                  </span>
-                  <span>Large Trades</span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  <span style={{ color: "#4caf50", fontSize: "1.25rem" }}>
-                    ✓
-                  </span>
-                  <span>High Volatility</span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  <span style={{ color: "#4caf50", fontSize: "1.25rem" }}>
-                    ✓
-                  </span>
-                  <span>Thin Liquidity</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Why Swaps Go Wrong - Educational Section */}
-            <WhySwapsGoWrong />
-
-            {/* Why This Happens */}
-            <details
-              style={{
-                backgroundColor: "white",
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                padding: "1rem",
-                marginBottom: "2rem",
-                cursor: "pointer",
-              }}
-            >
-              <summary
-                style={{
-                  fontWeight: "600",
-                  fontSize: "1rem",
-                  color: "#333",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                The Problem
-              </summary>
-              <div
-                style={{
-                  marginTop: "1rem",
-                  fontSize: "0.875rem",
-                  color: "#666",
-                  lineHeight: "1.6",
-                }}
-              >
-                In public swaps, your intent is visible before execution. Bots
-                can react faster than you, changing the final price. Private
-                execution hides intent until inclusion.
-              </div>
-            </details>
 
             {/* Feedback */}
             {!feedbackSent ? (
-              <div
-                style={{
-                  backgroundColor: "white",
-                  border: "1px solid #ddd",
-                  borderRadius: "8px",
-                  padding: "1.5rem",
-                  textAlign: "center",
-                }}
-              >
-                <h3
-                  style={{
-                    margin: "0 0 1rem 0",
-                    fontSize: "1.125rem",
-                    fontWeight: "600",
-                    color: "#333",
-                  }}
-                >
-                  Was this useful? Your Feedback Matters!!
-                </h3>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "1rem",
-                    justifyContent: "center",
-                    flexWrap: "wrap",
-                    marginBottom: "1rem",
-                  }}
-                >
-                  <div style={{ position: "relative" }}>
-                    <button
+              <Card className="mb-6">
+                <CardContent className="pt-6 text-center">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Was this useful? Your Feedback Matters!!
+                  </h3>
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    <Button
+                      variant="outline"
                       onClick={() => sendFeedback("confused")}
                       disabled={isLoading}
-                      style={{
-                        padding: "0.75rem 1.5rem",
-                        backgroundColor: "white",
-                        border: "2px solid #ddd",
-                        borderRadius: "4px",
-                        fontSize: "1rem",
-                        cursor: isLoading ? "not-allowed" : "pointer",
-                        fontWeight: "500",
-                        transition: "all 0.2s",
-                        opacity: isLoading ? 0.7 : 1,
-                      }}
-                      onMouseOver={(e) =>
-                        (e.currentTarget.style.borderColor = "#666")
-                      }
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.borderColor = "#ddd")
-                      }
+                      className="relative"
                     >
-                      {isLoading ? "Sending..." : "😕 Confusing"}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openFeedbackModal("confused");
-                      }}
-                      style={{
-                        position: "absolute",
-                        top: "-8px",
-                        right: "-8px",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        backgroundColor: "#666",
-                        color: "white",
-                        border: "none",
-                        fontSize: "0.75rem",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: "600",
-                      }}
-                      title="Add details"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div style={{ position: "relative" }}>
-                    <button
+                      😕 Confusing
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openFeedbackModal("confused");
+                        }}
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gray-600 text-white text-xs font-semibold hover:bg-gray-700 cursor-pointer flex items-center justify-center"
+                      >
+                        +
+                      </span>
+                    </Button>
+                    <Button
+                      variant="outline"
                       onClick={() => sendFeedback("interesting")}
                       disabled={isLoading}
-                      style={{
-                        padding: "0.75rem 1.5rem",
-                        backgroundColor: "white",
-                        border: "2px solid #ddd",
-                        borderRadius: "4px",
-                        fontSize: "1rem",
-                        cursor: isLoading ? "not-allowed" : "pointer",
-                        fontWeight: "500",
-                        transition: "all 0.2s",
-                        opacity: isLoading ? 0.7 : 1,
-                      }}
-                      onMouseOver={(e) =>
-                        (e.currentTarget.style.borderColor = "#666")
-                      }
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.borderColor = "#ddd")
-                      }
+                      className="relative"
                     >
-                      {isLoading ? "Sending..." : "🤔 Interesting"}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openFeedbackModal("interesting");
-                      }}
-                      style={{
-                        position: "absolute",
-                        top: "-8px",
-                        right: "-8px",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        backgroundColor: "#666",
-                        color: "white",
-                        border: "none",
-                        fontSize: "0.75rem",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: "600",
-                      }}
-                      title="Add details"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div style={{ position: "relative" }}>
-                    <button
+                      🤔 Interesting
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openFeedbackModal("interesting");
+                        }}
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gray-600 text-white text-xs font-semibold hover:bg-gray-700 cursor-pointer flex items-center justify-center"
+                      >
+                        +
+                      </span>
+                    </Button>
+                    <Button
+                      variant="outline"
                       onClick={() => sendFeedback("want_this")}
                       disabled={isLoading}
-                      style={{
-                        padding: "0.75rem 1.5rem",
-                        backgroundColor: "white",
-                        border: "2px solid #ddd",
-                        borderRadius: "4px",
-                        fontSize: "1rem",
-                        cursor: isLoading ? "not-allowed" : "pointer",
-                        fontWeight: "500",
-                        transition: "all 0.2s",
-                        opacity: isLoading ? 0.7 : 1,
-                      }}
-                      onMouseOver={(e) =>
-                        (e.currentTarget.style.borderColor = "#666")
-                      }
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.borderColor = "#ddd")
-                      }
+                      className="relative"
                     >
-                      {isLoading ? "Sending..." : "🔥 I want this"}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openFeedbackModal("want_this");
-                      }}
-                      style={{
-                        position: "absolute",
-                        top: "-8px",
-                        right: "-8px",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        backgroundColor: "#666",
-                        color: "white",
-                        border: "none",
-                        fontSize: "0.75rem",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: "600",
-                      }}
-                      title="Add details"
-                    >
-                      +
-                    </button>
+                      🔥 I want this
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openFeedbackModal("want_this");
+                        }}
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gray-600 text-white text-xs font-semibold hover:bg-gray-700 cursor-pointer flex items-center justify-center"
+                      >
+                        +
+                      </span>
+                    </Button>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ) : (
-              <div
-                style={{
-                  backgroundColor: "#e8f5e9",
-                  border: "1px solid #4caf50",
-                  borderRadius: "8px",
-                  padding: "1rem",
-                  textAlign: "center",
-                  color: "#2e7d32",
-                  fontWeight: "600",
-                }}
-              >
-                Thanks for your feedback! 🙏
-              </div>
+              <Alert className="mb-6 bg-green-50 border-green-500">
+                <AlertDescription className="text-green-800 font-semibold text-center">
+                  Thanks for your feedback! 🙏
+                </AlertDescription>
+              </Alert>
             )}
 
-            {/* Disclaimer */}
-            <div
-              style={{
-                backgroundColor: results.isMock ? "#fff3e0" : "#e3f2fd",
-                border: results.isMock
-                  ? "1px solid #ff9800"
-                  : "1px solid #2196f3",
-                borderRadius: "8px",
-                padding: "1rem",
-                marginBottom: "1rem",
-                fontSize: "0.875rem",
-                color: results.isMock ? "#e65100" : "#0d47a1",
-              }}
-            >
-              {results.isMock ? (
-                <>
-                  <strong>Demo Mode:</strong> Using mock pricing data
-                  (~$195/SOL). Protected route output is simulated based on
-                  historical MEV loss ranges for retail trades (0.1–0.4%) and
-                  includes a 0.1% platform fee.
-                </>
-              ) : (
-                <>
-                  <strong>Note:</strong> Normal route uses real Jupiter quotes.
-                  Protected route output is simulated based on historical MEV
-                  loss ranges for retail trades (0.1–0.4%) and includes a 0.1%
-                  platform fee. This demonstrates how private orderflow
-                  execution reduces exposure compared to public mempool
-                  visibility.
-                </>
-              )}
-            </div>
+            {/* Educational Section - Collapsible */}
+            <Collapsible open={educationOpen} onOpenChange={setEducationOpen}>
+              <Card className="mb-6">
+                <CardContent className="pt-6">
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Want to know why? Learn more ↓
+                      </h3>
+                      <ChevronDown className={`h-5 w-5 text-gray-600 transition-transform ${educationOpen ? "rotate-180" : ""}`} />
+                    </div>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="mt-4">
+                    <div className="space-y-4">
+                      {/* Sandwich Attacks */}
+                      <div className="p-4 bg-orange-50 border-l-4 border-orange-500 rounded">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">🥪</span>
+                          <span className="font-semibold text-orange-900">Sandwich Attacks</span>
+                        </div>
+                        <p className="text-sm text-gray-700">
+                          Bots see your pending transaction and place orders before and after yours. They buy before you (raising the price), then sell after you (lowering it). You pay more and get less.
+                        </p>
+                      </div>
 
-            {/* What This Demo Is NOT */}
-            <div
-              style={{
-                backgroundColor: "#f9f9f9",
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                padding: "0.75rem",
-                marginBottom: "2rem",
-                fontSize: "0.8rem",
-                color: "#666",
-                textAlign: "center",
-              }}
-            >
+                      {/* Front-Running */}
+                      <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">🏃</span>
+                          <span className="font-semibold text-red-900">Front-Running</span>
+                        </div>
+                        <p className="text-sm text-gray-700">
+                          Bots monitor the mempool (pending transactions pool) and copy profitable trades. They pay higher fees to get included first, moving the price before your trade executes.
+                        </p>
+                      </div>
+
+                      {/* Price Movement */}
+                      <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">📈</span>
+                          <span className="font-semibold text-blue-900">Price Movement During Execution</span>
+                        </div>
+                        <p className="text-sm text-gray-700">
+                          Between when you submit and when your transaction confirms, other trades happen. The price moves naturally, but you&apos;re locked into your slippage tolerance.
+                        </p>
+                      </div>
+
+                      {/* Slippage */}
+                      <div className="p-4 bg-purple-50 border-l-4 border-purple-500 rounded">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">💧</span>
+                          <span className="font-semibold text-purple-900">Slippage & Liquidity</span>
+                        </div>
+                        <p className="text-sm text-gray-700">
+                          Large trades move the price in the liquidity pool itself. Lower liquidity = higher slippage. Your trade changes the price as it executes.
+                        </p>
+                      </div>
+
+                      {/* Common Thread */}
+                      <div className="p-4 bg-gray-100 rounded">
+                        <div className="font-semibold text-gray-900 mb-2">The common thread:</div>
+                        <p className="text-sm text-gray-700">
+                          Your transaction intent is visible in the public mempool before it executes. Bots have milliseconds to react. You can&apos;t outrun them on latency.
+                        </p>
+                      </div>
+
+                      {/* Learn More Links */}
+                      <div className="p-4 bg-blue-50 rounded">
+                        <div className="font-semibold text-gray-900 mb-3">📚 Learn more about MEV and bots:</div>
+                        <div className="space-y-2">
+                          <a
+                            href="https://www.webopedia.com/crypto/learn/biggest-mev-bot-attacks/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            <span>→</span>
+                            <span className="underline">Biggest MEV Bot Attacks</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                          <a
+                            href="https://www.reddit.com/r/solana/comments/1gzygdz/losing_all_your_money_to_memecoins_the_problem/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            <span>→</span>
+                            <span className="underline">MEV & Bots on Solana: Real Trader Experiences</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </CardContent>
+              </Card>
+            </Collapsible>
+
+            {/* Disclaimer */}
+            <Alert className={results.isMock ? "bg-orange-50 border-orange-200" : "bg-blue-50 border-blue-200"}>
+              <AlertDescription className={results.isMock ? "text-orange-900" : "text-blue-900"}>
+                {results.isMock ? (
+                  <>
+                    <strong>Demo Mode:</strong> Using mock pricing data (~$195/SOL). Protected route output is simulated based on historical MEV loss ranges for retail trades (0.1–0.4%) and includes a 0.1% platform fee.
+                  </>
+                ) : (
+                  <>
+                    <strong>Note:</strong> Normal route uses real Jupiter quotes. Protected route output is simulated based on historical MEV loss ranges for retail trades (0.1–0.4%) and includes a 0.1% platform fee.
+                  </>
+                )}
+              </AlertDescription>
+            </Alert>
+
+            <p className="text-center text-sm text-gray-500 mt-4">
               Educational simulation only. Not actual trades.
-            </div>
+            </p>
           </>
         )}
+
         {/* Footer */}
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: "3rem",
-            color: "#999",
-            fontSize: "0.875rem",
-          }}
-        >
+        <div className="text-center mt-12 text-gray-500 text-sm">
           <p>No wallet • No signup</p>
         </div>
       </div>
 
       {/* Feedback Modal */}
-      {showFeedbackModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-            padding: "1rem",
-          }}
-          onClick={() => setShowFeedbackModal(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "8px",
-              padding: "2rem",
-              maxWidth: "500px",
-              width: "100%",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3
-              style={{
-                margin: "0 0 0.5rem 0",
-                fontSize: "1.25rem",
-                fontWeight: "600",
-                color: "#333",
-              }}
-            >
-              {selectedSentiment === "confused" &&
-                "😕 Help us understand what's confusing"}
-              {selectedSentiment === "interesting" &&
-                "🤔 We'd love to hear more"}
-              {selectedSentiment === "want_this" &&
-                "🔥 Tell us why you want this"}
-            </h3>
-            <p
-              style={{
-                margin: "0 0 1rem 0",
-                fontSize: "0.875rem",
-                color: "#666",
-              }}
-            >
-              {selectedSentiment === "confused" &&
-                "What part didn't make sense? Your feedback helps us explain better."}
-              {selectedSentiment === "interesting" &&
-                "What caught your attention? What questions do you have?"}
-              {selectedSentiment === "want_this" &&
-                "What would you use this for? Share your thoughts!"}
-            </p>
+      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {selectedSentiment === "confused" && "😕 Help us understand what's confusing"}
+              {selectedSentiment === "interesting" && "🤔 We'd love to hear more"}
+              {selectedSentiment === "want_this" && "🔥 Tell us why you want this"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedSentiment === "confused" && "What part didn't make sense? Your feedback helps us explain better."}
+              {selectedSentiment === "interesting" && "What caught your attention? What questions do you have?"}
+              {selectedSentiment === "want_this" && "What would you use this for? Share your thoughts!"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <textarea
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            placeholder="Share your thoughts..."
+            autoFocus
+            className="w-full min-h-30 p-3 border border-gray-300 rounded-md resize-vertical"
+          />
 
-            <textarea
-              value={feedbackText}
-              onChange={(e) => setFeedbackText(e.target.value)}
-              placeholder="Share your thoughts..."
-              autoFocus
-              style={{
-                width: "100%",
-                minHeight: "120px",
-                padding: "0.75rem",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                fontSize: "1rem",
-                fontFamily: "inherit",
-                resize: "vertical",
-                marginBottom: "1rem",
-              }}
-            />
-
-            <div
-              style={{
-                display: "flex",
-                gap: "1rem",
-                justifyContent: "flex-end",
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowFeedbackModal(false);
+                setFeedbackText("");
+                setSelectedSentiment("");
               }}
             >
-              <button
-                onClick={() => {
-                  setShowFeedbackModal(false);
-                  setFeedbackText("");
-                  setSelectedSentiment("");
-                }}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  backgroundColor: "white",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontSize: "1rem",
-                  cursor: "pointer",
-                  fontWeight: "500",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => sendFeedback(selectedSentiment, feedbackText)}
-                disabled={isLoading || !feedbackText.trim()}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  backgroundColor: isLoading
-                    ? "#ccc"
-                    : feedbackText.trim()
-                    ? "#111"
-                    : "#ccc",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  fontSize: "1rem",
-                  cursor:
-                    isLoading || !feedbackText.trim()
-                      ? "not-allowed"
-                      : "pointer",
-                  fontWeight: "600",
-                }}
-              >
-                {isLoading ? "Sending..." : "Send"}
-              </button>
-            </div>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => sendFeedback(selectedSentiment, feedbackText)}
+              disabled={isLoading || !feedbackText.trim()}
+              className="bg-gray-900 hover:bg-gray-800"
+            >
+              {isLoading ? "Sending..." : "Send"}
+            </Button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
