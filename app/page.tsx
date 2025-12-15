@@ -35,7 +35,7 @@ export default function MEVDemo() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [selectedSentiment, setSelectedSentiment] = useState("");
-  const [isLoading ,setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Deterministic MEV calculation based on trade size
   const calculateMEVExposure = (solAmount: number): number => {
@@ -144,8 +144,8 @@ export default function MEVDemo() {
       setShowFeedbackModal(false);
     } catch (error) {
       console.error("Feedback error:", error);
-    }finally {
-      setIsLoading(false)
+    } finally {
+      setIsLoading(false);
       setFeedbackText("");
       setSelectedSentiment("");
     }
@@ -180,7 +180,7 @@ export default function MEVDemo() {
               marginBottom: "1rem",
             }}
           >
-            MEV Demo
+            MEV Demo : Need Feeback for Educational Purpose
           </div>
           <h1
             style={{
@@ -323,9 +323,6 @@ export default function MEVDemo() {
         {/* Results */}
         {results && (
           <>
-            {/* Why Swaps Go Wrong - Educational Section */}
-            <WhySwapsGoWrong />
-
             <div
               style={{
                 display: "grid",
@@ -712,6 +709,9 @@ export default function MEVDemo() {
                 </div>
               </div>
             </div>
+
+            {/* Why Swaps Go Wrong - Educational Section */}
+            <WhySwapsGoWrong />
 
             {/* Why This Happens */}
             <details
@@ -1131,7 +1131,10 @@ export default function MEVDemo() {
                   border: "none",
                   borderRadius: "4px",
                   fontSize: "1rem",
-                  cursor: isLoading || !feedbackText.trim() ? "not-allowed" : "pointer",
+                  cursor:
+                    isLoading || !feedbackText.trim()
+                      ? "not-allowed"
+                      : "pointer",
                   fontWeight: "600",
                 }}
               >
